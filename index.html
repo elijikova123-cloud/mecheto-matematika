@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Мечето събира мед - Умножение и Деление</title>
+    <style>
+        body { 
+            margin: 0; padding: 0;
+            background: linear-gradient(to bottom, #87CEEB 0%, #2e8b57 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #game-container { 
+            max-width: 900px; background: rgba(255, 255, 255, 0.95); 
+            padding: 30px; border-radius: 30px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 8px solid #8b4513; text-align: center;
+        }
+        .stats-bar {
+            background: #fffacd; padding: 10px; border-radius: 15px;
+            display: flex; justify-content: space-around;
+            font-weight: bold; font-size: 1.2rem; margin-bottom: 20px;
+            border: 2px dashed #daa520;
+        }
+        .bear-area { font-size: 6rem; margin: 10px; transition: transform 0.3s; }
+        #question { 
+            font-size: 4rem; background: #ffffff; border-radius: 20px;
+            padding: 10px 40px; display: inline-block;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1); color: #333;
+        }
+        .type-label { font-size: 1.5rem; color: #d2691e; font-weight: bold; margin: 10px 0; }
+        .pots-grid { 
+            display: grid; grid-template-columns: repeat(5, 1fr); 
+            gap: 15px; margin-top: 20px; 
+        }
+        .pot { 
+            background: #ffcc33; padding: 20px 10px; border-radius: 15px 15px 40% 40%;
+            border: 4px solid #b8860b; font-size: 1.5rem; font-weight: bold;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .pot:hover { transform: translateY(-5px); background: #ffd700; }
+        .error-text { color: #ff0000; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>🍯 Мечето събира мед</h1>
+    
+    <div class="stats-bar">
+        <div>🌳 Число: <span id="level">2</span></div>
+        <div>❤️ Грешки: <span id="errors" class="error-text">0</span>/3</div>
+        <div>⭐ Задачи: <span id="progress">0</span>/10</div>
+    </div>
+
+    <div class="bear-area" id="bear">🐻</div>
+    <div class="type-label" id="task-type">Умножение</div>
+    <div id="question">? × ?</div>
+
+    <div class="pots-grid" id="pots"></div>
+</div>
+
+<script>
+    let currentNumber = 2; // Започваме с таблицата с 2
+    let errors = 0;
+    let solvedInLevel = 0;
+    let targetAnswer = 0;
+
+    // Звукови ефекти
+    function playSound(type) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        if (type === 'win') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(520, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.2);
+        } else {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, ctx.currentTime);
+        }
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.4);
+    }
+
+    function generateTask() {
+        let randomNum = Math.floor(Math.random() * 10) + 1;
+        
+        if (solvedInLevel < 5) {
+            // Първите 5 задачи са умножение
+            document.getElementById('task-type').innerText = "Умножение";
+            targetAnswer = randomNum * currentNumber;
+            document.getElementById('question').innerText = `${randomNum} × ${currentNumber} = ?`;
+            renderPots('mul');
+        } else {
+            // Следващите 5 задачи са деление
+            document.getElementById('task-type').innerText = "Деление";
+            let dividend = randomNum * currentNumber;
+            targetAnswer = randomNum;
+            document.getElementById('question').innerText = `${dividend} : ${currentNumber} = ?`;
+            renderPots('div');
+        }
+    }
+
+    function renderPots(mode) {
+        const grid = document.getElementById('pots');
+        grid.innerHTML = '';
+        for (let i = 1; i <= 10; i++) {
+            let val = (mode === 'mul') ? (i * currentNumber) : i;
+            let pot = document.createElement('div');
+            pot.className = 'pot';
+            pot.innerText = val;
+            pot.onclick = () => check(val);
+            grid.appendChild(pot);
+        }
+    }
+
+    function check(val) {
+        if (val === targetAnswer) {
+            playSound('win');
+            solvedInLevel++;
+            document.getElementById('bear').style.transform = "scale(1.2)";
+            setTimeout(() => document.getElementById('bear').style.transform = "scale(1)", 300);
+            
+            if (solvedInLevel >= 10) {
+                alert(`Браво! Ти научи всичко за числото ${currentNumber}!`);
+                currentNumber++;
+                solvedInLevel = 0;
+                errors = 0;
+                if (currentNumber > 10) alert("ПОБЕДА! Ти си цар на математиката!");
+            }
+            update();
+            generateTask();
+        } else {
+            playSound('lose');
+            errors++;
+            update();
+            if (errors >= 3) {
+                alert("Опа! Пчелите дойдоха. Опитай нивото отначало.");
+                solvedInLevel = 0;
+                errors = 0;
+                update();
+                generateTask();
+            }
+        }
+    }
+
+    function update() {
+        document.getElementById('level').innerText = currentNumber;
+        document.getElementById('errors').innerText = errors;
+        document.getElementById('progress').innerText = solvedInLevel;
+    }
+
+    update();
+    generateTask();
+</script>
+</body>
+</html>
