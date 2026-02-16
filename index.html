@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <title>Мечето събира мед в гората</title>
+    <style>
+        /* Цялостен горски фон */
+        body { 
+            margin: 0; padding: 0;
+            background: #2e8b57; /* Резервен цвят */
+            /* Създаваме горска атмосфера с градиенти и цветове */
+            background-image: 
+                linear-gradient(to bottom, rgba(135, 206, 235, 0.8), rgba(46, 139, 87, 0.9)),
+                url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1351&q=80');
+            background-size: cover;
+            background-attachment: fixed;
+            min-height: 100vh;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        #game-container { 
+            max-width: 850px; 
+            background: rgba(255, 255, 255, 0.92); 
+            padding: 25px; 
+            border-radius: 40px; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            border: 10px solid #5d4037; /* Кафява рамка като дърво */
+            text-align: center;
+            position: relative;
+        }
+
+        h1 { color: #2e7d32; text-shadow: 1px 1px #fff; margin-top: 0; font-size: 2.2rem; }
+
+        .stats-bar {
+            background: #fff9c4; padding: 15px; border-radius: 20px;
+            display: flex; justify-content: space-around;
+            font-weight: bold; font-size: 1.1rem; margin-bottom: 20px;
+            border: 3px solid #fbc02d; color: #5d4037;
+        }
+
+        /* Мечето */
+        .bear-area { font-size: 7rem; margin: 5px; filter: drop-shadow(2px 4px 5px rgba(0,0,0,0.2)); }
+
+        /* Задачата */
+        #question-box {
+            background: #ffffff; border: 4px solid #ffa000;
+            border-radius: 25px; padding: 15px 40px;
+            display: inline-block; margin-bottom: 15px;
+        }
+        #question { font-size: 3.5rem; color: #333; margin: 0; }
+        .type-label { font-size: 1.4rem; color: #ef6c00; font-weight: bold; margin-bottom: 5px; }
+
+        /* Гърнетата с мед */
+        .pots-grid { 
+            display: grid; grid-template-columns: repeat(5, 1fr); 
+            gap: 15px; margin-top: 15px; 
+        }
+        .pot { 
+            background: #ffc107; 
+            padding: 15px 5px; 
+            border-radius: 15px 15px 45% 45%;
+            border: 5px solid #8d6e63; 
+            font-size: 1.6rem; font-weight: bold; color: #5d4037;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 0 #795548;
+            position: relative;
+        }
+        .pot:hover { transform: translateY(-5px) scale(1.05); background: #ffca28; }
+        .pot:active { transform: translateY(2px); box-shadow: none; }
+
+        /* Специален стил за заглавието на нивото */
+        .level-tag { color: #d32f2f; font-size: 1.3rem; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>🌲 Мечето събира мед в гората 🍯</h1>
+    
+    <div class="stats-bar">
+        <div>🌳 Таблица с: <span id="level" class="level-tag">2</span></div>
+        <div>❤️ Грешки: <span id="errors" style="color:red">0</span>/3</div>
+        <div>⭐ Напълнени гърнета: <span id="progress">0</span>/10</div>
+    </div>
+
+    <div class="bear-area" id="bear">🐻</div>
+    
+    <div id="question-box">
+        <div class="type-label" id="task-type">Умножение</div>
+        <div id="question">2 × 1 = ?</div>
+    </div>
+
+    <div class="pots-grid" id="pots">
+        </div>
+</div>
+
+<script>
+    let currentNumber = 2;
+    let errors = 0;
+    let solvedInLevel = 0;
+    let targetAnswer = 0;
+
+    function playSound(type) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            if (type === 'win') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(520, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.2);
+            } else {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+            }
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.4);
+        } catch(e) { console.log("Audio not supported"); }
+    }
+
+    function generateTask() {
+        let randomNum = Math.floor(Math.random() * 10) + 1;
+        
+        if (solvedInLevel < 5) {
+            document.getElementById('task-type').innerText = "Умножение 🐝";
+            targetAnswer = randomNum * currentNumber;
+            document.getElementById('question').innerText = `${randomNum} × ${currentNumber}`;
+            renderPots('mul');
+        } else {
+            document.getElementById('task-type').innerText = "Деление 🍯";
+            let dividend = randomNum * currentNumber;
+            targetAnswer = randomNum;
+            document.getElementById('question').innerText = `${dividend} : ${currentNumber}`;
+            renderPots('div');
+        }
+    }
+
+    function renderPots(mode) {
+        const grid = document.getElementById('pots');
+        grid.innerHTML = '';
+        for (let i = 1; i <= 10; i++) {
+            let val = (mode === 'mul') ? (i * currentNumber) : i;
+            let pot = document.createElement('div');
+            pot.className = 'pot';
+            pot.innerText = val;
+            pot.onclick = () => check(val);
+            grid.appendChild(pot);
+        }
+    }
+
+    function check(val) {
+        if (val === targetAnswer) {
+            playSound('win');
+            solvedInLevel++;
+            const bear = document.getElementById('bear');
+            bear.style.transform = "scale(1.3) rotate(10deg)";
+            setTimeout(() => bear.style.transform = "scale(1) rotate(0deg)", 300);
+            
+            if (solvedInLevel >= 10) {
+                alert(`Браво! Мечето се наяде с мед за числото ${currentNumber}! Продължаваме напред!`);
+                currentNumber++;
+                solvedInLevel = 0;
+                errors = 0;
+                if (currentNumber > 10) {
+                    alert("ТИ СИ ШАМПИОН! Мечето е най-щастливото в цялата гора!");
+                    currentNumber = 2;
+                }
+            }
+            update();
+            generateTask();
+        } else {
+            playSound('lose');
+            errors++;
+            update();
+            if (errors >= 3) {
+                alert("Опа! Пчелите те настигнаха. Да опитаме таблицата отначало.");
+                solvedInLevel = 0;
+                errors = 0;
+                update();
+                generateTask();
+            }
+        }
+    }
+
+    function update() {
+        document.getElementById('level').innerText = currentNumber;
+        document.getElementById('errors').innerText = errors;
+        document.getElementById('progress').innerText = solvedInLevel;
+    }
+
+    update();
+    generateTask();
+</script>
+</body>
+</html>
