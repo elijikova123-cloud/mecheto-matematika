@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мечето в анимираната гора</title>
+    <title>Мечето - Пълна Таблица</title>
     <style>
-        /* Анимирана гора */
         body { 
             margin: 0; overflow: hidden;
             background: linear-gradient(to bottom, #1e5128, #4e944f);
             font-family: 'Comic Sans MS', cursive, sans-serif;
             display: flex; justify-content: center; align-items: center; min-height: 100vh;
         }
-
-        /* Листа, които падат в гората */
         .leaf {
             position: absolute; width: 20px; height: 20px; background: #81c784;
             border-radius: 50% 0 50% 0; opacity: 0.6; animation: fall 5s linear infinite;
@@ -22,51 +19,34 @@
             0% { transform: translateY(-10vh) rotate(0deg); left: calc(var(--pos)); }
             100% { transform: translateY(110vh) rotate(360deg); left: calc(var(--pos) + 50px); }
         }
-
         #game-container { 
-            width: 90%; max-width: 800px; background: rgba(255, 255, 255, 0.95); 
+            width: 90%; max-width: 850px; background: rgba(255, 255, 255, 0.95); 
             padding: 25px; border-radius: 40px; box-shadow: 0 15px 50px rgba(0,0,0,0.4);
             border: 8px solid #5d4037; text-align: center; position: relative; z-index: 10;
         }
-
-        /* Мече и анимации */
-        .bear-area { font-size: 100px; display: inline-block; transition: 0.3s; cursor: default; }
+        .bear-area { font-size: 80px; display: inline-block; transition: 0.3s; }
         .jump { animation: jumpAnim 0.5s ease; }
-        @keyframes jumpAnim {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-30px) scale(1.1); }
-        }
-
-        /* Пчеличките при грешка */
+        @keyframes jumpAnim { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px) scale(1.1); } }
+        
         #bees-attack {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 50px; display: none; z-index: 100; pointer-events: none;
+            font-size: 60px; display: none; z-index: 100; pointer-events: none;
         }
-        .buzz { animation: buzzAnim 0.3s infinite; }
-        @keyframes buzzAnim {
-            0% { transform: translate(-50%, -50%) translate(5px, 5px); }
-            50% { transform: translate(-50%, -50%) translate(-5px, -5px); }
-            100% { transform: translate(-50%, -50%) translate(5px, -5px); }
-        }
+        .buzz { animation: buzzAnim 0.1s infinite; }
+        @keyframes buzzAnim { 0% { transform: translate(-50%, -50%) translate(3px, 3px); } 100% { transform: translate(-50%, -50%) translate(-3px, -3px); } }
 
-        /* Дизайн на менюто и гърнетата */
         .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
         .menu-btn { 
             background: #ffa000; color: white; border: none; padding: 15px; 
             border-radius: 20px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 5px #e65100;
         }
-        .menu-btn:hover { background: #fb8c00; transform: scale(1.05); }
-
         .pots-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px; }
         .pot { 
             background: #ffc107; padding: 15px 5px; border-radius: 15px 15px 45% 45%;
-            border: 3px solid #8d6e63; font-size: 1.6rem; font-weight: bold;
-            cursor: pointer; box-shadow: 0 4px #795548;
+            border: 3px solid #8d6e63; font-size: 1.4rem; font-weight: bold; cursor: pointer;
         }
-        .pot:hover { transform: translateY(-3px); background: #ffca28; }
-
-        .stats-bar { display: flex; justify-content: space-around; font-weight: bold; margin-bottom: 15px; }
-        #question { font-size: 3.5rem; margin: 15px 0; color: #333; }
+        .stats-bar { display: flex; justify-content: space-around; font-weight: bold; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 20px; }
+        #question { font-size: 3rem; margin: 10px 0; background: #fffde7; border-radius: 20px; padding: 10px; }
         .screen { display: none; }
         .active { display: block; }
     </style>
@@ -77,71 +57,87 @@
     for(let i=0; i<15; i++) {
         document.write(`<div class="leaf" style="--pos:${Math.random()*100}%; animation-delay:${Math.random()*5}s"></div>`);
     }
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(freq, type, duration) {
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
 </script>
 
 <div id="game-container">
     <div id="bees-attack">🐝🐝🐝<br>🐝🐻🐝<br>🐝🐝🐝</div>
 
     <div id="screen-menu" class="screen active">
-        <h1>🌲 Здравей! Избери таблица:</h1>
+        <h1>🌲 Горско училище 🍯</h1>
+        <p>Научи цялата таблица (20 задачи)!</p>
         <div class="menu-grid" id="menu-btns"></div>
     </div>
 
     <div id="screen-game" class="screen">
         <div class="stats-bar">
-            <div>🌳 Таблица: <span id="level-txt"></span></div>
-            <div>❤️ <span id="err-txt">0</span>/3</div>
-            <div>⭐ <span id="prog-txt">0</span>/10</div>
+            <div>🌳 Число: <span id="level-txt"></span></div>
+            <div>❤️ Грешки: <span id="err-txt">0</span>/3</div>
+            <div>⭐ Прогрес: <span id="prog-txt">0</span>/20</div>
         </div>
         <div class="bear-area" id="main-bear">🐻</div>
-        <div id="task-type" style="color:#ef6c00; font-weight:bold;">Умножение</div>
+        <div id="task-type" style="font-weight: bold; color: #5d4037;">Умножение</div>
         <div id="question">?</div>
         <div class="pots-grid" id="pots-area"></div>
-        <button onclick="showMenu()" style="margin-top:20px; cursor:pointer; background:none; border:1px solid #ccc; border-radius:5px;">Назад</button>
     </div>
 </div>
 
 <script>
-    let tableNum = 2;
-    let errors = 0;
-    let progress = 0;
-    let answer = 0;
+    let tableNum = 2; let errors = 0; let progress = 0; let answer = 0;
+    let pendingTasks = [];
 
-    // Генериране на бутони за менюто
     const menuDiv = document.getElementById('menu-btns');
     for(let i=2; i<=10; i++) {
         let b = document.createElement('button');
         b.className = 'menu-btn';
-        b.innerText = i;
-        b.onclick = () => start(i);
+        b.innerText = 'Таблица с ' + i;
+        b.onclick = () => { audioCtx.resume(); start(i); };
         menuDiv.appendChild(b);
     }
 
     function start(n) {
         tableNum = n; errors = 0; progress = 0;
+        // Генерираме списък с всички 20 задачи (10 умножение и 10 деление)
+        pendingTasks = [];
+        for(let i=1; i<=10; i++) pendingTasks.push({type: 'mul', val: i});
+        for(let i=1; i<=10; i++) pendingTasks.push({type: 'div', val: i});
+        
+        // Разбъркваме задачите, за да не са подред (по-интересно е)
+        pendingTasks.sort(() => Math.random() - 0.5);
+
         document.getElementById('screen-menu').classList.remove('active');
         document.getElementById('screen-game').classList.add('active');
-        nextTask();
-        update();
-    }
-
-    function showMenu() {
-        document.getElementById('screen-game').classList.remove('active');
-        document.getElementById('screen-menu').classList.add('active');
+        nextTask(); update();
     }
 
     function nextTask() {
-        let r = Math.floor(Math.random() * 10) + 1;
-        let type = document.getElementById('task-type');
-        if(progress < 5) {
-            type.innerText = "Умножение 🐝";
-            answer = r * tableNum;
-            document.getElementById('question').innerText = `${r} × ${tableNum}`;
+        if(pendingTasks.length === 0) {
+            playSound(800, 'sine', 0.8);
+            alert("НЕВЕРОЯТНО! Ти реши всички 20 задачи за таблицата с " + tableNum + "! ⭐🍯");
+            location.reload();
+            return;
+        }
+
+        let task = pendingTasks[0];
+        let typeText = document.getElementById('task-type');
+        
+        if(task.type === 'mul') {
+            typeText.innerText = "Умножение 🐝";
+            answer = task.val * tableNum;
+            document.getElementById('question').innerText = `${task.val} × ${tableNum} = ?`;
             drawPots(true);
         } else {
-            type.innerText = "Деление 🍯";
-            answer = r;
-            document.getElementById('question').innerText = `${r * tableNum} : ${tableNum}`;
+            typeText.innerText = "Деление 🍯";
+            answer = task.val;
+            document.getElementById('question').innerText = `${task.val * tableNum} : ${tableNum} = ?`;
             drawPots(false);
         }
     }
@@ -149,6 +145,7 @@
     function drawPots(isMul) {
         const area = document.getElementById('pots-area');
         area.innerHTML = '';
+        // Показваме всички възможни отговори (от 1 до 10 за деление или n до 10n за умножение)
         for(let i=1; i<=10; i++) {
             let val = isMul ? i * tableNum : i;
             let p = document.createElement('div');
@@ -161,31 +158,29 @@
 
     function check(v) {
         const bear = document.getElementById('main-bear');
-        const bees = document.getElementById('bees-attack');
-
         if(v === answer) {
             progress++;
-            bear.classList.add('jump'); // Мечето подскача от радост
+            pendingTasks.shift(); // Махаме решената задача
+            playSound(600, 'sine', 0.2);
+            bear.classList.add('jump');
             setTimeout(() => bear.classList.remove('jump'), 500);
-            
-            if(progress >= 10) {
-                alert("Браво! Ти напълни всички гърнета! 🍯");
-                showMenu();
-            }
+            update(); nextTask();
         } else {
             errors++;
+            playSound(150, 'sawtooth', 0.3);
             if(errors >= 3) {
-                bees.style.display = 'block';
-                bees.classList.add('buzz'); // Пчелите нападат
+                const bees = document.getElementById('bees-attack');
+                bees.style.display = 'block'; bees.classList.add('buzz');
+                let buzzInterval = setInterval(() => playSound(100, 'square', 0.05), 100);
                 setTimeout(() => {
+                    clearInterval(buzzInterval);
                     bees.style.display = 'none';
-                    alert("Опа! Пчелите дойдоха. Опитай пак!");
-                    start(tableNum);
-                }, 1500);
+                    alert("Опитай пак! Трябва да си по-внимателен с пчелите!");
+                    location.reload();
+                }, 2000);
             }
+            update();
         }
-        update();
-        nextTask();
     }
 
     function update() {
